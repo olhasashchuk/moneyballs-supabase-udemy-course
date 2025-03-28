@@ -1,7 +1,8 @@
 import { defineStore } from "pinia";
 import { ref, computed, reactive, nextTick } from "vue";
-import { uid, Notify } from "quasar";
+import { Notify } from "quasar";
 import { useShowErrorMessage } from "src/use/useShowErrorMessage";
+import { useNonReactiveCopy } from "src/use/useNonReactiveCopy";
 import supabase from "src/config/supabase";
 
 export const useStoreEntries = defineStore("entries", () => {
@@ -98,7 +99,7 @@ export const useStoreEntries = defineStore("entries", () => {
         { event: "*", schema: "public", table: "entries" },
         (payload) => {
           if (payload.eventType === "INSERT") {
-            entries.value.push(payload.new)
+            entries.value.push(payload.new);
           }
           if (payload.eventType === "DELETE") {
             const index = getEntryIndexById(payload.old.id);
@@ -113,28 +114,48 @@ export const useStoreEntries = defineStore("entries", () => {
       .subscribe();
   };
 
-  const addEntry = (addEntryForm) => {
+  const addEntry = async (addEntryForm) => {
     const newEntry = Object.assign({}, addEntryForm, {
-      id: uid(),
       paid: false,
     });
     if (newEntry.amount === null) newEntry.amount = 0;
-    entries.value.push(newEntry);
+    const { error } = await supabase
+      .from("entries")
+      .insert([newEntry])
+      .select();
+
+    if (error) useShowErrorMessage("Could not add entry to Supabase");
   };
 
-  const deleteEntry = (entryId) => {
-    const index = getEntryIndexById(entryId);
-    entries.value.splice(index, 1);
-    removeSlideItemIfExists(entryId);
-    Notify.create({
-      message: "Entry deleted",
-      position: "top",
-    });
+  const deleteEntry = async (entryId) => {
+    const { error } = await supabase.from("entries").delete().eq("id", entryId);
+    if (error) {
+      useShowErrorMessage("Could not delete entry from Supabase");
+      return;
+    } else {
+      removeSlideItemIfExists(entryId);
+      Notify.create({
+        message: "Entry deleted",
+        position: "top",
+      });
+    }
   };
 
-  const updateEntry = (entryId, updates) => {
+  const updateEntry = async (entryId, updates) => {
     const index = getEntryIndexById(entryId);
+    const oldEntry = useNonReactiveCopy(entries.value[index]);
     Object.assign(entries.value[index], updates);
+    
+    const { error } = await supabase
+      .from("entries")
+      .update(updates)
+      .eq("id", entryId)
+      .select();
+
+    if (error) {
+      useShowErrorMessage("Could not update entry in Supabase");
+      Object.assign(entries.value[index], oldEntry);
+    }
   };
 
   const sortEnd = ({ oldIndex, newIndex }) => {
