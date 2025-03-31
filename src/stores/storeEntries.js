@@ -15,25 +15,29 @@ export const useStoreEntries = defineStore("entries", () => {
     //   id: 'id1',
     //   name: 'Salary',
     //   amount: 4999.99,
-    //   paid: true
+    //   paid: true,
+    //   order: 1,
     // },
     // {
     //   id: 'id2',
     //   name: 'Rent',
     //   amount: -999,
-    //   paid: false
+    //   paid: fals,
+    //   order: 2,
     // },
     // {
     //   id: 'id3',
     //   name: 'Phone bill',
     //   amount: -14.99,
-    //   paid: false
+    //   paid: fals,
+    //   order: 3,
     // },
     // {
     //   id: 'id4',
     //   name: 'Unknown',
     //   amount: 0,
-    //   paid: false
+    //   paid: fals,
+    //   order: 4,
     // },
   ]);
 
@@ -80,7 +84,10 @@ export const useStoreEntries = defineStore("entries", () => {
   const loadEntries = async () => {
     entriesLoaded.value = false;
 
-    let { data, error } = await supabase.from("entries").select("*");
+    let { data, error } = await supabase
+      .from("entries")
+      .select("*")
+      .order('order', { ascending: true });
 
     if (error) useShowErrorMessage(error.message);
 
@@ -117,6 +124,7 @@ export const useStoreEntries = defineStore("entries", () => {
   const addEntry = async (addEntryForm) => {
     const newEntry = Object.assign({}, addEntryForm, {
       paid: false,
+      order: generateOrderNumber(),
     });
     if (newEntry.amount === null) newEntry.amount = 0;
     const { error } = await supabase
@@ -158,10 +166,37 @@ export const useStoreEntries = defineStore("entries", () => {
     }
   };
 
+  const updateEntryOrderNumbers = async() => {
+    let currentOrder = 1;
+    entries.value.forEach(entry => {
+      entry.order = currentOrder;
+      currentOrder++;
+    });
+
+    const entriesToUpdate = entries.value.map(entry => {
+      return {
+        id: entry.id,
+        order: entry.order,
+      };
+    })
+
+    const { error } = await supabase
+    .from('entries')
+    .upsert(entriesToUpdate)
+    .select()
+
+    if(error) {
+      useShowErrorMessage("Could not update entry order numbers in Supabase");
+      return;
+    }
+
+  }
+
   const sortEnd = ({ oldIndex, newIndex }) => {
     const movedEntry = entries.value[oldIndex];
     entries.value.splice(oldIndex, 1);
     entries.value.splice(newIndex, 0, movedEntry);
+    updateEntryOrderNumbers();
   };
 
   const saveEntries = () => {
@@ -171,7 +206,11 @@ export const useStoreEntries = defineStore("entries", () => {
   /*
     helpers
   */
-
+  const generateOrderNumber = () => {
+    const orderNumbers = entries.value.map((entry) => entry.order);
+    const newOrderNumber = orderNumbers.length ? Math.max(...orderNumbers) + 1 : 1;
+    return newOrderNumber
+  }
   const getEntryIndexById = (entryId) => {
     return entries.value.findIndex((entry) => entry.id === entryId);
   };
