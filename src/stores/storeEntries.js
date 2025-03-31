@@ -87,7 +87,7 @@ export const useStoreEntries = defineStore("entries", () => {
     let { data, error } = await supabase
       .from("entries")
       .select("*")
-      .order('order', { ascending: true });
+      .order("order", { ascending: true });
 
     if (error) useShowErrorMessage(error.message);
 
@@ -153,7 +153,7 @@ export const useStoreEntries = defineStore("entries", () => {
     const index = getEntryIndexById(entryId);
     const oldEntry = useNonReactiveCopy(entries.value[index]);
     Object.assign(entries.value[index], updates);
-    
+
     const { error } = await supabase
       .from("entries")
       .update(updates)
@@ -166,31 +166,30 @@ export const useStoreEntries = defineStore("entries", () => {
     }
   };
 
-  const updateEntryOrderNumbers = async() => {
+  const updateEntryOrderNumbers = async () => {
     let currentOrder = 1;
-    entries.value.forEach(entry => {
+    entries.value.forEach((entry) => {
       entry.order = currentOrder;
       currentOrder++;
     });
 
-    const entriesToUpdate = entries.value.map(entry => {
+    const entriesToUpdate = entries.value.map((entry) => {
       return {
         id: entry.id,
         order: entry.order,
       };
-    })
+    });
 
     const { error } = await supabase
-    .from('entries')
-    .upsert(entriesToUpdate)
-    .select()
+      .from("entries")
+      .upsert(entriesToUpdate)
+      .select();
 
-    if(error) {
+    if (error) {
       useShowErrorMessage("Could not update entry order numbers in Supabase");
       return;
     }
-
-  }
+  };
 
   const sortEnd = ({ oldIndex, newIndex }) => {
     const movedEntry = entries.value[oldIndex];
@@ -208,9 +207,11 @@ export const useStoreEntries = defineStore("entries", () => {
   */
   const generateOrderNumber = () => {
     const orderNumbers = entries.value.map((entry) => entry.order);
-    const newOrderNumber = orderNumbers.length ? Math.max(...orderNumbers) + 1 : 1;
-    return newOrderNumber
-  }
+    const newOrderNumber = orderNumbers.length
+      ? Math.max(...orderNumbers) + 1
+      : 1;
+    return newOrderNumber;
+  };
   const getEntryIndexById = (entryId) => {
     return entries.value.findIndex((entry) => entry.id === entryId);
   };
