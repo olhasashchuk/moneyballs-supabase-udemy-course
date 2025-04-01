@@ -13,14 +13,7 @@
           @click="toggleLeftDrawer"
         />
 
-        <q-toolbar-title>
-          <div class="absolute-center">
-            <div class="toolbar-title-text">
-              <q-icon name="savings" /> 
-              Moneyballs
-            </div>
-          </div>
-        </q-toolbar-title>
+        <ToolbarTitle />
 
         <q-btn 
           v-if="$route.fullPath === '/'"
@@ -56,6 +49,25 @@
           v-bind="link"
         />
 
+        <q-separator spaced />
+        
+        <q-item
+          to="/auth"
+          clickable
+          class="text-white"
+          tag="a"
+        >
+          <q-item-section
+            avatar
+          >
+            <q-icon name="logout" />
+          </q-item-section>
+
+          <q-item-section>
+            <q-item-label>Log out</q-item-label>
+          </q-item-section>
+        </q-item>
+        
         <q-item
           v-if="$q.platform.is.electron"
           @click="quitApp"
@@ -88,6 +100,7 @@ import { useQuasar } from 'quasar'
 import { useStoreEntries } from 'src/stores/storeEntries'
 import { useLightOrDark } from 'src/use/useLightOrDark'
 import NavLink from 'components/Nav/NavLink.vue'
+import ToolbarTitle from 'src/components/Layout/ToolbarTitle.vue'
 
 defineOptions({
   name: 'MainLayout'
