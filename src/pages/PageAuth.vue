@@ -80,9 +80,9 @@ const formSubmit = () => {
 
 const formSubmitSuccess = () => {
   if (tab.value === "register") {
-    console.log("Register user with these credentials:", credentials);
+    console.log("Register user with these credentials: ++", credentials);
   } else {
-    console.log("Login user with these credentials:", credentials);
+    console.log("Login user with these credentials: ++", credentials);
   }
   router.push('/')
 };
